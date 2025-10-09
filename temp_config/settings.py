@@ -11,9 +11,14 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+#import os
+#import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+#env = environ.Env()
+#env.read_env(os.path.join(BASE_DIR, 'env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -76,8 +81,23 @@ WSGI_APPLICATION = 'temp_config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        
+        # --- PARÁMETROS DEL POOLER ---
+        'NAME': 'postgres', 
+        # ATENCIÓN: El usuario del pooler es diferente.
+        'USER': 'postgres.tpoawysibiahziwqjedg', 
+        'PASSWORD': '018000aandress', 
+        
+        # Host del Pooler (EJEMPLO - COPIA EL TUYO DE SUPABASE)
+        'HOST': 'aws-1-us-east-2.pooler.supabase.com', 
+        
+        # Puerto del Pooler (COPIA EL TUYO DE SUPABASE, a menudo es 6543 o 5432)
+        'PORT': '6543', 
+
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
     }
 }
 
