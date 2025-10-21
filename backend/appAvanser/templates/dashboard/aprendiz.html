@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ aprendiz.apUsuario.first_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Bienvenida -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-sena bg-gradient" style="background: linear-gradient(135deg, var(--sena-azul) 0%, #006bb3 100%);">
+                <div class="card-body p-4 text-white">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="fw-bold mb-2">
+                                ¡Bienvenido, {{ aprendiz.apUsuario.first_name }}!
+                            </h2>
+                            <p class="mb-2">
+                                <i class="bi bi-mortarboard"></i> 
+                                Ficha: {{ aprendiz.ficha.numero_ficha|default:"Sin asignar" }}
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-calendar-check"></i> 
+                                Estado: 
+                                {% if aprendiz.estado %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-center text-md-end">
+                            <i class="bi bi-person-circle" style="font-size: 5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card card-sena h-100 border-primary">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-megaphone text-primary mb-3" style="font-size: 3rem;"></i>
+                    <h3 class="fw-bold text-primary">{{ convocatorias_abiertas }}</h3>
+                    <p class="text-muted mb-0">Convocatorias Abiertas</p>
+                    <a href="#convocatorias" class="btn btn-sm btn-outline-primary mt-3">
+                        Ver Todas <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-sena h-100 border-success">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-file-earmark-check text-success mb-3" style="font-size: 3rem;"></i>
+                    <h3 class="fw-bold text-success">{{ mis_postulaciones }}</h3>
+                    <p class="text-muted mb-0">Mis Postulaciones</p>
+                    <a href="#postulaciones" class="btn btn-sm btn-outline-success mt-3">
+                        Ver Detalle <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-sena h-100 border-warning">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-clipboard-data text-warning mb-3" style="font-size: 3rem;"></i>
+                    <h3 class="fw-bold text-warning">
+                        {% if caracterizacion_actual %}
+                            {{ caracterizacion_actual.obtener_progreso }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </h3>
+                    <p class="text-muted mb-0">Caracterización Actual</p>
+                    {% if caracterizacion_actual %}
+                        {% if caracterizacion_actual.completada %}
+                            <span class="btn btn-sm btn-success mt-3 disabled">
+                                <i class="bi bi-check-circle"></i> Completada
+                            </span>
+                        {% else %}
+                            <a href="{% url 'formulario_caracterizacion' caracterizacion_actual.id %}" 
+                               class="btn btn-sm btn-outline-warning mt-3">
+                                Continuar <i class="bi bi-arrow-right"></i>
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <span class="btn btn-sm btn-outline-secondary mt-3 disabled">
+                            No iniciada
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Convocatorias Disponibles -->
+    <div class="row mb-4" id="convocatorias">
+        <div class="col-12">
+            <div class="card card-sena">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-megaphone"></i> 
+                        Convocatorias Disponibles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if convocatorias_abiertas > 0 %}
+                        <p class="text-muted mb-3">
+                            Hay {{ convocatorias_abiertas }} convocatoria(s) abiertas en este momento
+                        </p>
+                        
+                        <!-- Aquí irían las convocatorias reales -->
+                        <div class="alert alert-info alert-custom">
+                            <i class="bi bi-info-circle"></i> 
+                            Próximamente podrás ver y postularte a las convocatorias desde aquí
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+                            <p class="text-muted mt-3">
+                                No hay convocatorias abiertas en este momento
+                            </p>
+                            <p class="small text-muted">
+                                Te notificaremos cuando haya nuevas oportunidades
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mis Postulaciones -->
+    <div class="row mb-4" id="postulaciones">
+        <div class="col-12">
+            <div class="card card-sena">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-file-earmark-check"></i> 
+                        Mis Postulaciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if mis_postulaciones > 0 %}
+                        <p class="text-muted mb-3">
+                            Tienes {{ mis_postulaciones }} postulación(es) registradas
+                        </p>
+                        
+                        <div class="alert alert-info alert-custom">
+                            <i class="bi bi-info-circle"></i> 
+                            Aquí podrás ver el estado de tus postulaciones y resultados
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-x text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+                            <p class="text-muted mt-3">
+                                Aún no tienes postulaciones
+                            </p>
+                            <p class="small text-muted mb-3">
+                                Postúlate a las convocatorias disponibles para aparecer aquí
+                            </p>
+                            <a href="#convocatorias" class="btn btn-sena">
+                                <i class="bi bi-search"></i> Buscar Convocatorias
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información y Recursos -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card card-sena h-100 bg-light">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-question-circle text-primary"></i> 
+                        ¿Necesitas Ayuda?
+                    </h5>
+                    <p class="text-muted small mb-3">
+                        Si tienes dudas sobre convocatorias, postulaciones o beneficios, 
+                        contacta al área de bienestar.
+                    </p>
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-headset"></i> Contactar Bienestar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card card-sena h-100 bg-light">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-calendar-event text-success"></i> 
+                        Recordatorios
+                    </h5>
+                    <ul class="small text-muted mb-0">
+                        <li class="mb-2">Actualiza tu caracterización cada trimestre</li>
+                        <li class="mb-2">Revisa las fechas de cierre de convocatorias</li>
+                        <li>Consulta regularmente tus resultados</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

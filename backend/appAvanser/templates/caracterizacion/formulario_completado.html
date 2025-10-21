@@ -1,0 +1,692 @@
+{% extends 'base.html' %}
+
+{% block title %}Formulario de Caracterización - SENA Bienestar{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root{
+        --sena-azul: #007bff;
+        --sena-verde: #00b894;
+        --sena-naranja: #ff8c42;
+    }
+    body { background: #f6f8fa; }
+    .card-sena { border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); border: none; }
+    .seccion-titulo {
+        background: linear-gradient(135deg, var(--sena-azul) 0%, #006bb3 100%);
+        color: white;
+        padding: 12px 18px;
+        border-radius: 10px 10px 0 0;
+        margin-top: 24px;
+    }
+    .pregunta-grupo { padding: 16px; background: white; border: 1px solid #e9ecef; border-top: none; }
+    .pregunta-label { font-weight:600; margin-bottom:8px; display:block; color:#333; }
+    .obligatorio::after { content: " *"; color: red; }
+    .progress { height: 12px; border-radius: 999px; overflow: hidden; background: #e9ecef; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--sena-verde), var(--sena-azul)); transition: width .4s ease; }
+    .btn-sena { background: linear-gradient(90deg, var(--sena-verde), var(--sena-azul)); color: white; border: none; }
+    .btn-sena:disabled { opacity: .8; }
+    .sticky-help { position: sticky; top: 20px; }
+    .small-muted { color: #6c757d; font-size: .9rem; }
+    .form-check-input:checked { background-color: var(--sena-naranja); border-color: var(--sena-naranja); }
+    .badge-output { min-width: 36px; display: inline-block; text-align:center; }
+    @media (max-width:768px){ .seccion-titulo { margin-top: 16px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Header card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-sena bg-primary text-white">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold mb-1"><i class="bi bi-clipboard-data"></i> Formulario de Caracterización</h2>
+                    <p class="mb-2">Año: {{ caracterizacion.anio }} | Trimestre: {{ caracterizacion.trimestre }}</p>
+
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between text-white mb-1">
+                            <span>Progreso de completado</span>
+                            <span class="fw-bold" id="progressPercentTop">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div id="progressBarTop" class="progress-bar" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="formCaracterizacion" action="{% url 'formulario_caracterizacion' caracterizacion.id %}" novalidate>
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- DATOS PERSONALES -->
+                <div class="seccion-titulo">
+                    <h4 class="mb-0"><i class="bi bi-person-fill"></i> Datos Personales</h4>
+                </div>
+                <div class="card card-sena mb-4" style="border-radius:0 0 10px 10px; border-top:none;">
+                    <div class="card-body p-0">
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Nombres</label>
+                            <input type="text" class="form-control" name="nombres" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Apellidos</label>
+                            <input type="text" class="form-control" name="apellidos" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Número de Identificación</label>
+                            <input type="text" class="form-control" name="numero_identificacion" pattern="[0-9]+" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Correo Electrónico</label>
+                            <input type="email" class="form-control" name="correo_electronico" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Teléfono</label>
+                            <input type="tel" class="form-control" name="telefono" pattern="[0-9]{10}" placeholder="3001234567" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" name="fecha_nacimiento" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Género</label>
+                            <div class="row">
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="genero" value="Femenino" id="genero1" required><label class="form-check-label" for="genero1">Femenino</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="genero" value="Masculino" id="genero2" required><label class="form-check-label" for="genero2">Masculino</label></div></div>
+                                <div class="col-md-4">
+                                    <div class="form-check"><input class="form-check-input" type="radio" name="genero" value="Otro" id="genero3" required><label class="form-check-label" for="genero3">Otro</label></div>
+                                    <input type="text" class="form-control form-control-sm mt-2" name="genero_otro" placeholder="Especifique" id="genero_otro_input" style="display:none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Estado Civil</label>
+                            <div class="row">
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="estado_civil" value="Soltero(a)" id="civil1" required><label class="form-check-label" for="civil1">Soltero(a)</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="estado_civil" value="Casado(a)" id="civil2" required><label class="form-check-label" for="civil2">Casado(a)</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="estado_civil" value="Unión libre" id="civil3" required><label class="form-check-label" for="civil3">Unión libre</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="estado_civil" value="Divorciado(a)" id="civil4" required><label class="form-check-label" for="civil4">Divorciado(a)</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="estado_civil" value="Viudo(a)" id="civil5" required><label class="form-check-label" for="civil5">Viudo(a)</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Nivel Educativo</label>
+                            <select class="form-select" name="nivel_educativo" required>
+                                <option value="">Seleccione una opción</option>
+                                <option value="Primaria">Primaria</option>
+                                <option value="Bachiller">Bachiller</option>
+                                <option value="Técnico">Técnico</option>
+                                <option value="Tecnólogo">Tecnólogo</option>
+                                <option value="Universitario">Universitario</option>
+                            </select>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Grupo Étnico</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="grupo_etnico" value="Indígena" id="etnico1" required><label class="form-check-label" for="etnico1">Indígena</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="grupo_etnico" value="Afrodescendiente" id="etnico2" required><label class="form-check-label" for="etnico2">Afrodescendiente</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="grupo_etnico" value="Raizal" id="etnico3" required><label class="form-check-label" for="etnico3">Raizal</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="grupo_etnico" value="Ninguno" id="etnico4" required><label class="form-check-label" for="etnico4">Ninguno</label></div></div>
+                                <div class="col-12 mt-2"><div class="form-check"><input class="form-check-input" type="radio" name="grupo_etnico" value="Otro" id="etnico5" required><label class="form-check-label" for="etnico5">Otro</label></div><input type="text" class="form-control form-control-sm mt-2" name="grupo_etnico_otro" placeholder="Especifique" id="etnico_otro_input" style="display:none;"></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Estrato Socioeconómico</label>
+                            <div class="row">
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="estrato" value="0" id="estrato0" required><label class="form-check-label" for="estrato0">0</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="estrato" value="1" id="estrato1" required><label class="form-check-label" for="estrato1">1</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="estrato" value="2" id="estrato2" required><label class="form-check-label" for="estrato2">2</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="estrato" value="3" id="estrato3" required><label class="form-check-label" for="estrato3">3</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="estrato" value="4" id="estrato4" required><label class="form-check-label" for="estrato4">4</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="estrato" value="5" id="estrato5" required><label class="form-check-label" for="estrato5">5</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="estrato" value="6" id="estrato6" required><label class="form-check-label" for="estrato6">6</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Barrio de Residencia</label>
+                            <input type="text" class="form-control" name="barrio_residencia" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Comuna</label>
+                            <div class="row">
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="1" id="comuna1" required><label class="form-check-label" for="comuna1">1</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="2" id="comuna2" required><label class="form-check-label" for="comuna2">2</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="3" id="comuna3" required><label class="form-check-label" for="comuna3">3</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="4" id="comuna4" required><label class="form-check-label" for="comuna4">4</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="5" id="comuna5" required><label class="form-check-label" for="comuna5">5</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="6" id="comuna6" required><label class="form-check-label" for="comuna6">6</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="7" id="comuna7" required><label class="form-check-label" for="comuna7">7</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="8" id="comuna8" required><label class="form-check-label" for="comuna8">8</label></div></div>
+                                <div class="col-md-2 col-4"><div class="form-check"><input class="form-check-input" type="radio" name="comuna" value="9" id="comuna9" required><label class="form-check-label" for="comuna9">9</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Ocupación Actual</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="ocupacion" value="Estudia" id="ocup1" required><label class="form-check-label" for="ocup1">Estudia</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="ocupacion" value="Trabaja" id="ocup2" required><label class="form-check-label" for="ocup2">Trabaja</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="ocupacion" value="Estudia y trabaja" id="ocup3" required><label class="form-check-label" for="ocup3">Estudia y trabaja</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="ocupacion" value="Otro" id="ocup4" required><label class="form-check-label" for="ocup4">Otro</label></div><input type="text" class="form-control form-control-sm mt-2" name="ocupacion_otro" placeholder="Especifique" id="ocupacion_otro_input" style="display:none;"></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Tiene hijos?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="tiene_hijos" value="Si" id="hijos_si" required><label class="form-check-label" for="hijos_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="tiene_hijos" value="No" id="hijos_no" required><label class="form-check-label" for="hijos_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo" id="cuantos_hijos_grupo" style="display:none;">
+                            <label class="pregunta-label">Si respondió Sí, ¿Cuántos?</label>
+                            <div class="row">
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="cuantos_hijos" value="1-2" id="cant_hijos1"><label class="form-check-label" for="cant_hijos1">1–2</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="cuantos_hijos" value="3-5" id="cant_hijos2"><label class="form-check-label" for="cant_hijos2">3–5</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="cuantos_hijos" value="Más de 5" id="cant_hijos3"><label class="form-check-label" for="cant_hijos3">Más de 5</label></div></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- CONTEXTO FAMILIAR Y SOCIAL -->
+                <div class="seccion-titulo">
+                    <h4 class="mb-0"><i class="bi bi-house-heart-fill"></i> Contexto Familiar y Social</h4>
+                </div>
+                <div class="card card-sena mb-4" style="border-radius:0 0 10px 10px; border-top:none;">
+                    <div class="card-body p-0">
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Con quién vive actualmente?</label>
+                            <div class="row">
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="vive_con" value="Solo(a)" id="vive1" required><label class="form-check-label" for="vive1">Solo(a)</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="vive_con" value="Padres" id="vive2" required><label class="form-check-label" for="vive2">Padres</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="vive_con" value="Familia" id="vive3" required><label class="form-check-label" for="vive3">Familia</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="vive_con" value="Amigos" id="vive4" required><label class="form-check-label" for="vive4">Amigos</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="vive_con" value="Pareja e hijos" id="vive5" required><label class="form-check-label" for="vive5">Pareja e hijos</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Quién es la cabeza del hogar?</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="cabeza_hogar" value="Padre/Madre" id="cabeza1" required><label class="form-check-label" for="cabeza1">Padre/Madre</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="cabeza_hogar" value="Otro familiar" id="cabeza2" required><label class="form-check-label" for="cabeza2">Otro familiar</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="cabeza_hogar" value="Usted mismo" id="cabeza3" required><label class="form-check-label" for="cabeza3">Usted mismo</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="cabeza_hogar" value="Pareja" id="cabeza4" required><label class="form-check-label" for="cabeza4">Pareja</label></div></div>
+                                <div class="col-12 mt-2"><div class="form-check"><input class="form-check-input" type="radio" name="cabeza_hogar" value="Otro" id="cabeza5" required><label class="form-check-label" for="cabeza5">Otro</label></div><input type="text" class="form-control form-control-sm mt-2" name="cabeza_hogar_otro" placeholder="Especifique" id="cabeza_otro_input" style="display:none;"></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿En qué tipo de vivienda reside actualmente?</label>
+                            <div class="row">
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="tipo_vivienda" value="Propia" id="vivienda1" required><label class="form-check-label" for="vivienda1">Propia</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="tipo_vivienda" value="Arrendada" id="vivienda2" required><label class="form-check-label" for="vivienda2">Arrendada</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="tipo_vivienda" value="Familiar (no paga arriendo)" id="vivienda3" required><label class="form-check-label" for="vivienda3">Familiar (no paga arriendo)</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Número de personas que viven con usted</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="num_personas" value="1" id="personas1" required><label class="form-check-label" for="personas1">1</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="num_personas" value="2-4" id="personas2" required><label class="form-check-label" for="personas2">2–4</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="num_personas" value="5-7" id="personas3" required><label class="form-check-label" for="personas3">5–7</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="num_personas" value="Más de 7" id="personas4" required><label class="form-check-label" for="personas4">Más de 7</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Tiene acceso a internet en su hogar?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="acceso_internet" value="Si" id="internet_si" required><label class="form-check-label" for="internet_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="acceso_internet" value="No" id="internet_no" required><label class="form-check-label" for="internet_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Cuenta con equipo propio para estudiar?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="equipo_propio" value="Si" id="equipo_si" required><label class="form-check-label" for="equipo_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="equipo_propio" value="No" id="equipo_no" required><label class="form-check-label" for="equipo_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Es usted responsable del hogar?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="responsable_hogar" value="Si" id="responsable_si" required><label class="form-check-label" for="responsable_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="responsable_hogar" value="No" id="responsable_no" required><label class="form-check-label" for="responsable_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Su familia y amigos consideran su formación una prioridad?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="formacion_prioridad" value="Si" id="prioridad_si" required><label class="form-check-label" for="prioridad_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="formacion_prioridad" value="No" id="prioridad_no" required><label class="form-check-label" for="prioridad_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Cuenta con apoyo emocional de familiares y amigos?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="apoyo_emocional" value="Si" id="apoyo_si" required><label class="form-check-label" for="apoyo_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="apoyo_emocional" value="No" id="apoyo_no" required><label class="form-check-label" for="apoyo_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- UBICACIÓN Y TRANSPORTE -->
+                <div class="seccion-titulo">
+                    <h4 class="mb-0"><i class="bi bi-geo-alt-fill"></i> Ubicación y Transporte</h4>
+                </div>
+                <div class="card card-sena mb-4" style="border-radius:0 0 10px 10px; border-top:none;">
+                    <div class="card-body p-0">
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Distancia aproximada de su hogar al centro de formación</label>
+                            <div class="row">
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="distancia" value="1-5 km" id="dist1" required><label class="form-check-label" for="dist1">1–5 km</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="distancia" value="5-10 km" id="dist2" required><label class="form-check-label" for="dist2">5–10 km</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="distancia" value="Más de 10 km" id="dist3" required><label class="form-check-label" for="dist3">Más de 10 km</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Medio de transporte principal</label>
+                            <div class="row">
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="transporte" value="Transporte público" id="trans1" required><label class="form-check-label" for="trans1">Transporte público</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="transporte" value="Transporte intermunicipal" id="trans2" required><label class="form-check-label" for="trans2">Transporte intermunicipal</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="transporte" value="Bicicleta" id="trans3" required><label class="form-check-label" for="trans3">Bicicleta</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="transporte" value="Moto" id="trans4" required><label class="form-check-label" for="trans4">Moto</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="transporte" value="Carro particular" id="trans5" required><label class="form-check-label" for="trans5">Carro particular</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Tiempo promedio de desplazamiento</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="tiempo_desplazamiento" value="5-10 min" id="tiempo1" required><label class="form-check-label" for="tiempo1">5–10 min</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="tiempo_desplazamiento" value="10-30 min" id="tiempo2" required><label class="form-check-label" for="tiempo2">10–30 min</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="tiempo_desplazamiento" value="30 min-1 h" id="tiempo3" required><label class="form-check-label" for="tiempo3">30 min–1 h</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="tiempo_desplazamiento" value="Más de 1 h" id="tiempo4" required><label class="form-check-label" for="tiempo4">Más de 1 h</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿El costo del transporte le dificulta continuar en el programa?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="costo_transporte" value="Si" id="costo_si" required><label class="form-check-label" for="costo_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="costo_transporte" value="No" id="costo_no" required><label class="form-check-label" for="costo_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Tiene inconvenientes con el transporte para llegar al centro de formación?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="inconvenientes_transporte" value="Si" id="inconv_si" required><label class="form-check-label" for="inconv_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="inconvenientes_transporte" value="No" id="inconv_no" required><label class="form-check-label" for="inconv_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ASPECTOS ACADÉMICOS -->
+                <div class="seccion-titulo">
+                    <h4 class="mb-0"><i class="bi bi-book-fill"></i> Aspectos Académicos</h4>
+                </div>
+                <div class="card card-sena mb-4" style="border-radius:0 0 10px 10px; border-top:none;">
+                    <div class="card-body p-0">
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Programa en el que está inscrito</label>
+                            <input type="text" class="form-control" name="programa_inscrito" required>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Por qué eligió este programa?</label>
+                            <textarea class="form-control" name="por_que_programa" rows="3" required></textarea>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Qué apoyos considera importantes para continuar en el programa?</label>
+                            <textarea class="form-control" name="apoyos_importantes" rows="3" required></textarea>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿En algún momento ha pensado en dejar el programa?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="pensado_dejar" value="Si" id="dejar_si" required><label class="form-check-label" for="dejar_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="pensado_dejar" value="No" id="dejar_no" required><label class="form-check-label" for="dejar_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Qué motivos dificultan su continuidad en la formación?</label>
+                            <div class="row">
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Familiares" id="motivo1"><label class="form-check-label" for="motivo1">Familiares</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Económicos" id="motivo2"><label class="form-check-label" for="motivo2">Económicos</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Laborales" id="motivo3"><label class="form-check-label" for="motivo3">Laborales</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Salud" id="motivo4"><label class="form-check-label" for="motivo4">Salud</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Sociales" id="motivo5"><label class="form-check-label" for="motivo5">Sociales</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Académicos" id="motivo6"><label class="form-check-label" for="motivo6">Académicos</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Calidad del programa" id="motivo7"><label class="form-check-label" for="motivo7">Calidad del programa</label></div></div>
+                                <div class="col-md-4 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="motivos_dificultad" value="Institucionales" id="motivo8"><label class="form-check-label" for="motivo8">Institucionales</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Ha solicitado apoyos externos (subsidios, becas, etc.)?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="apoyos_externos" value="Si" id="apoyos_ext_si" required><label class="form-check-label" for="apoyos_ext_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="apoyos_externos" value="No" id="apoyos_ext_no" required><label class="form-check-label" for="apoyos_ext_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo" id="apoyos_suficientes_grupo" style="display:none;">
+                            <label class="pregunta-label">Si respondió Sí, ¿cree que han sido suficientes?</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="apoyos_suficientes" value="Si" id="suf_si"><label class="form-check-label" for="suf_si">Sí</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="apoyos_suficientes" value="No" id="suf_no"><label class="form-check-label" for="suf_no">No</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Jornada</label>
+                            <div class="row">
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="jornada" value="Mañana" id="jorn1" required><label class="form-check-label" for="jorn1">Mañana</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="jornada" value="Tarde" id="jorn2" required><label class="form-check-label" for="jorn2">Tarde</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="radio" name="jornada" value="Noche" id="jorn3" required><label class="form-check-label" for="jorn3">Noche</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Qué tipo de dificultades afectan actualmente su proceso de formación?</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="dificultades_formacion" value="Económicas" id="dif1"><label class="form-check-label" for="dif1">Económicas</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="dificultades_formacion" value="Psicológicas" id="dif2"><label class="form-check-label" for="dif2">Psicológicas</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="dificultades_formacion" value="Sentimentales" id="dif3"><label class="form-check-label" for="dif3">Sentimentales</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="dificultades_formacion" value="Prefiero no decirlo" id="dif4"><label class="form-check-label" for="dif4">Prefiero no decirlo</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">En qué etapa de formación enfrenta más dificultades</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="etapa_dificultades" value="Etapa lectiva" id="etapa1" required><label class="form-check-label" for="etapa1">Etapa lectiva</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="etapa_dificultades" value="Etapa productiva" id="etapa2" required><label class="form-check-label" for="etapa2">Etapa productiva</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">¿Qué apoyo necesita más en esa etapa?</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="apoyo_necesita" value="Económico" id="apoyo1"><label class="form-check-label" for="apoyo1">Económico</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="apoyo_necesita" value="Alimentación" id="apoyo2"><label class="form-check-label" for="apoyo2">Alimentación</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="apoyo_necesita" value="Transporte" id="apoyo3"><label class="form-check-label" for="apoyo3">Transporte</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="apoyo_necesita" value="Comunicación" id="apoyo4"><label class="form-check-label" for="apoyo4">Comunicación</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Horas de estudio fuera de la jornada</label>
+                            <div class="row">
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="horas_estudio" value="Nunca" id="horas1" required><label class="form-check-label" for="horas1">Nunca</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="horas_estudio" value="1-3 h" id="horas2" required><label class="form-check-label" for="horas2">1–3 h</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="horas_estudio" value="3-5 h" id="horas3" required><label class="form-check-label" for="horas3">3–5 h</label></div></div>
+                                <div class="col-md-3 col-6"><div class="form-check"><input class="form-check-input" type="radio" name="horas_estudio" value="Más de 5 h" id="horas4" required><label class="form-check-label" for="horas4">Más de 5 h</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="pregunta-grupo">
+                            <label class="pregunta-label obligatorio">Probabilidad de finalizar exitosamente su formación</label>
+                            <div class="row">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="probabilidad_finalizar" value="Muy probable" id="prob1" required><label class="form-check-label" for="prob1">Muy probable</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="radio" name="probabilidad_finalizar" value="Poco probable" id="prob2" required><label class="form-check-label" for="prob2">Poco probable</label></div></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- TERMS -->
+                <div class="card card-sena border-warning mb-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-file-text text-warning"></i> Términos y Condiciones</h5>
+                        <div class="bg-light p-3 rounded mb-3" style="max-height:200px; overflow-y:auto;">
+                            <p class="mb-2"><strong>Autorización de Tratamiento de Datos Personales</strong></p>
+                            <p class="small">Autorizo al SENA para recolectar, almacenar, usar, circular y suprimir mis datos personales conforme a la Ley 1581 de 2012 y sus decretos reglamentarios, para:</p>
+                            <ul class="small">
+                                <li>Evaluar mi elegibilidad para beneficios de sostenimiento</li>
+                                <li>Gestionar convocatorias y postulaciones</li>
+                                <li>Enviar comunicaciones sobre programas de bienestar</li>
+                                <li>Realizar estudios estadísticos</li>
+                            </ul>
+                            <p class="small mb-0">Conozco mis derechos de acceso, rectificación, actualización y supresión de mis datos.</p>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="acepta_terminos" name="acepta_terminos" required>
+                            <label class="form-check-label fw-bold" for="acepta_terminos">He leído y acepto los términos y condiciones *</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mb-5">
+                    <button type="submit" class="btn btn-sena btn-lg"><i class="bi bi-check-circle"></i> Enviar formulario</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="saveDraft();">Guardar y continuar después</button>
+                </div>
+
+            </div>
+
+            <!-- Lateral ayuda -->
+            <div class="col-lg-4">
+                <div class="card card-sena bg-light sticky-help p-3">
+                    <h5 class="fw-bold mb-2"><i class="bi bi-info-circle text-primary"></i> Ayuda</h5>
+                    <p class="small-muted"><strong>Consejos:</strong></p>
+                    <ul class="small-muted">
+                        <li>Responde con sinceridad todas las preguntas</li>
+                        <li>Los campos marcados con * son obligatorios</li>
+                        <li>Puedes guardar y continuar después</li>
+                        <li>Revisa tu correo para recibir las credenciales</li>
+                    </ul>
+                    <hr>
+                    <h6 class="fw-bold mb-1"><i class="bi bi-clock text-success"></i> Tiempo estimado</h6>
+                    <p class="small-muted mb-2">10-15 minutos aproximadamente</p>
+                    <h6 class="fw-bold mb-1"><i class="bi bi-shield-check text-warning"></i> Seguridad</h6>
+                    <p class="small-muted mb-0">Tu información está protegida y será usada únicamente para fines académicos y de bienestar del SENA.</p>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Helpers for showing "otro" inputs
+function toggleInput(radioName, otherId) {
+    const radios = document.getElementsByName(radioName);
+    const otherInput = document.getElementById(otherId);
+    radios.forEach(r => {
+        r.addEventListener('change', () => {
+            if (r.value === 'Otro' && r.checked) otherInput.style.display = 'block';
+            else if (otherInput) {
+                // if any radio with value Otro is checked, show
+                const anyOtro = Array.from(radios).some(x => x.checked && x.value === 'Otro');
+                otherInput.style.display = anyOtro ? 'block' : 'none';
+            }
+        });
+    });
+}
+document.addEventListener('DOMContentLoaded', () => {
+    toggleInput('genero', 'genero_otro_input');
+    toggleInput('grupo_etnico', 'etnico_otro_input');
+    toggleInput('ocupacion', 'ocupacion_otro_input');
+    toggleInput('cabeza_hogar', 'cabeza_otro_input');
+});
+
+// Mostrar grupo "¿Cuántos hijos?"
+document.addEventListener('DOMContentLoaded', () => {
+    const hijosSi = document.getElementById('hijos_si');
+    const hijosNo = document.getElementById('hijos_no');
+    const cuantosGrupo = document.getElementById('cuantos_hijos_grupo');
+    function checkHijos() {
+        if (hijosSi && hijosSi.checked) cuantosGrupo.style.display = 'block';
+        else cuantosGrupo.style.display = 'none';
+    }
+    if (hijosSi && hijosNo) {
+        hijosSi.addEventListener('change', checkHijos);
+        hijosNo.addEventListener('change', checkHijos);
+        checkHijos();
+    }
+
+    // Apoyos externos
+    const apoyosSi = document.getElementById('apoyos_ext_si');
+    const apoyosNo = document.getElementById('apoyos_ext_no');
+    const apoyosSuf = document.getElementById('apoyos_suficientes_grupo');
+    function checkApoyos() {
+        if (apoyosSi && apoyosSi.checked) apoyosSuf.style.display = 'block';
+        else apoyosSuf.style.display = 'none';
+    }
+    if (apoyosSi && apoyosNo) {
+        apoyosSi.addEventListener('change', checkApoyos);
+        apoyosNo.addEventListener('change', checkApoyos);
+        checkApoyos();
+    }
+});
+
+// Progress bar logic and autosave-like localStorage
+(function(){
+    const form = document.getElementById('formCaracterizacion');
+    const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
+    const progressBar = document.getElementById('progressBarTop');
+    const progressText = document.getElementById('progressPercentTop');
+
+    function isFilled(el){
+        if (el.type === 'checkbox' || el.type === 'radio') {
+            // for grouped radios/checkboxes, consider group filled if any in same name is checked
+            const group = form.querySelectorAll('[name="'+el.name+'"]');
+            return Array.from(group).some(g => {
+                if (g.type === 'radio' || g.type === 'checkbox') return g.checked;
+                return g.value.trim() !== '';
+            });
+        }
+        return el.value !== undefined && el.value.toString().trim() !== '';
+    }
+
+    function updateProgress(){
+        // count unique names to avoid overcounting radios/checkboxes
+        const names = [...new Set(inputs.map(i => i.name).filter(Boolean))];
+        let filled = 0;
+        names.forEach(name => {
+            const group = form.querySelectorAll('[name="'+name+'"]');
+            const anyFilled = Array.from(group).some(isFilled);
+            if (anyFilled) filled++;
+        });
+        const percent = Math.round((filled / names.length) * 100) || 0;
+        progressBar.style.width = percent + '%';
+        progressText.textContent = percent + '%';
+        // mark form modified if user changed something
+    }
+
+    inputs.forEach(i => {
+        i.addEventListener('input', updateProgress);
+        i.addEventListener('change', updateProgress);
+    });
+
+    // load saved draft from localStorage (if exists)
+    const draftKey = 'form_caracterizacion_draft_{{ caracterizacion.id }}';
+    try {
+        const saved = localStorage.getItem(draftKey);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.keys(data).forEach(k => {
+                const el = form.querySelector('[name="'+k+'"]');
+                if (!el) return;
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    if (Array.isArray(data[k])) {
+                        data[k].forEach(v => {
+                            const target = form.querySelector('[name="'+k+'"][value="'+v+'"]');
+                            if (target) target.checked = true;
+                        });
+                    } else {
+                        const target = form.querySelector('[name="'+k+'"][value="'+data[k]+'"]');
+                        if (target) target.checked = true;
+                    }
+                } else {
+                    el.value = data[k];
+                }
+            });
+        }
+    } catch(e){ console.warn('No draft loaded', e); }
+    updateProgress();
+
+    // saveDraft function for button
+    window.saveDraft = function(){
+        const payload = {};
+        names = [...new Set(inputs.map(i => i.name).filter(Boolean))];
+        names.forEach(name => {
+            const group = form.querySelectorAll('[name="'+name+'"]');
+            if (!group.length) return;
+            if (group[0].type === 'radio') {
+                const sel = form.querySelector('[name="'+name+'"]:checked');
+                payload[name] = sel ? sel.value : '';
+            } else if (group[0].type === 'checkbox') {
+                const checked = Array.from(group).filter(x=>x.checked).map(x=>x.value);
+                payload[name] = checked;
+            } else {
+                payload[name] = group[0].value;
+            }
+        });
+        try {
+            localStorage.setItem(draftKey, JSON.stringify(payload));
+            alert('Borrador guardado en el navegador.');
+        } catch(e){ alert('No se pudo guardar el borrador: '+e.message); }
+    };
+
+    // beforeunload protection
+    let formModified = false;
+    inputs.forEach(i => i.addEventListener('change', () => { formModified = true; }));
+    window.addEventListener('beforeunload', function(e){
+        if (formModified) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // prevent double submit
+    form.addEventListener('submit', function(e){
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+        }
+    });
+
+})();
+</script>
+{% endblock %}

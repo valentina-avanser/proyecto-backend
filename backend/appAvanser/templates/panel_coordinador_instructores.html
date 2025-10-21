@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Coordinador Instructores - SENA{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-sena bg-primary text-white">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-people"></i> 
+                        Panel Coordinador de Instructores
+                    </h2>
+                    <p class="mb-0">Bienvenido, {{ user.first_name }} {{ user.last_name }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card card-sena h-100 text-center">
+                <div class="card-body p-4">
+                    <i class="bi bi-person-badge text-primary mb-3" style="font-size: 2.5rem;"></i>
+                    <h4 class="fw-bold" id="totalInstructores">0</h4>
+                    <p class="text-muted mb-0">Total Instructores</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-sena h-100 text-center">
+                <div class="card-body p-4">
+                    <i class="bi bi-book text-success mb-3" style="font-size: 2.5rem;"></i>
+                    <h4 class="fw-bold">0</h4>
+                    <p class="text-muted mb-0">Programas Activos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-sena h-100 text-center">
+                <div class="card-body p-4">
+                    <i class="bi bi-collection text-warning mb-3" style="font-size: 2.5rem;"></i>
+                    <h4 class="fw-bold">0</h4>
+                    <p class="text-muted mb-0">Fichas Activas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección principal -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-sena">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-list-ul"></i> Gestión de Instructores
+                    </h5>
+                    <div>
+                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalCargarJSON">
+                            <i class="bi bi-file-earmark-arrow-up"></i> Cargar JSON
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="cargarInstructores()">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Tabla de instructores -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tablaInstructores">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Documento</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Especialidad</th>
+                                    <th>Competencia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyInstructores">
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cargar JSON -->
+<div class="modal fade" id="modalCargarJSON" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Subir instructores desde JSON
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <small>
+                        <strong>Formato requerido:</strong><br>
+                        El archivo debe ser JSON con estos campos:<br>
+                        <code>documento, username, first_name, last_name, email, especialidad, competencia</code>
+                    </small>
+                </div>
+
+                <form id="formCargarJSON" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="archivoJSON" class="form-label">Selecciona un archivo JSON:</label>
+                        <input 
+                            type="file" 
+                            class="form-control" 
+                            id="archivoJSON"
+                            name="archivo"
+                            accept=".json"
+                            required
+                        >
+                        <small class="text-muted">
+                            Archivo: <span id="nombreArchivo">Ninguno</span>
+                        </small>
+                    </div>
+
+                    <div id="resultadoCarga" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="subirInstructores()" id="btnSubirJSON">
+                    <i class="bi bi-cloud-upload"></i> Subir instructores
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Obtener token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Mostrar nombre de archivo seleccionado
+document.addEventListener('DOMContentLoaded', function() {
+    const inputArchivo = document.getElementById('archivoJSON');
+    if (inputArchivo) {
+        inputArchivo.addEventListener('change', function() {
+            const nombreArchivo = document.getElementById('nombreArchivo');
+            if (this.files.length > 0) {
+                nombreArchivo.textContent = this.files[0].name;
+            } else {
+                nombreArchivo.textContent = 'Ninguno';
+            }
+        });
+    }
+    
+    // Cargar instructores al iniciar
+    cargarInstructores();
+});
+
+// Cargar lista de instructores
+async function cargarInstructores() {
+    const tbody = document.getElementById('tbodyInstructores');
+    
+    try {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        const response = await fetch('/api/instructor/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar instructores');
+        }
+
+        const instructores = await response.json();
+        
+        // Actualizar contador
+        document.getElementById('totalInstructores').textContent = instructores.length;
+
+        if (instructores.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No hay instructores registrados. Haz clic en "Cargar JSON" para agregar instructores.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = '';
+        instructores.forEach(instructor => {
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td>${instructor.instUsuario?.documento || 'N/A'}</td>
+                <td>${instructor.instUsuario?.first_name || ''} ${instructor.instUsuario?.last_name || ''}</td>
+                <td>${instructor.instUsuario?.email || 'N/A'}</td>
+                <td>${instructor.especialidad || 'N/A'}</td>
+                <td>${instructor.competencia || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="verDetalles(${instructor.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(fila);
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger">
+                    <i class="bi bi-exclamation-circle"></i> Error al cargar los datos
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Subir instructores desde JSON usando el endpoint correcto
+async function subirInstructores() {
+    const archivo = document.getElementById('archivoJSON').files[0];
+    const btnSubir = document.getElementById('btnSubirJSON');
+    const resultado = document.getElementById('resultadoCarga');
+
+    if (!archivo) {
+        alert('Por favor selecciona un archivo JSON');
+        return;
+    }
+
+    // Validar que sea un archivo JSON
+    if (!archivo.name.endsWith('.json')) {
+        resultado.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> El archivo debe tener extensión .json
+            </div>
+        `;
+        resultado.style.display = 'block';
+        return;
+    }
+
+    // Deshabilitar botón
+    btnSubir.disabled = true;
+    btnSubir.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+    resultado.style.display = 'none';
+
+    try {
+        // Crear FormData con el archivo
+        const formData = new FormData();
+        formData.append('archivo', archivo);
+
+        // Enviar al endpoint correcto
+        const response = await fetch('/cargar_instructores/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Mostrar resultado exitoso
+            let html = `
+                <div class="alert alert-${data.tiene_errores ? 'warning' : 'success'}">
+                    <h6><i class="bi bi-check-circle"></i> ${data.mensaje}</h6>
+                    <ul class="mb-0">
+                        <li><strong>Nuevos registros:</strong> ${data.nuevos_registros}</li>
+                        <li><strong>Registros existentes:</strong> ${data.registros_existentes}</li>
+                        <li><strong>Total procesados:</strong> ${data.total_procesados}</li>
+                        ${data.errores.length > 0 ? `<li class="text-danger"><strong>Errores:</strong> ${data.errores.length}</li>` : ''}
+                    </ul>
+            `;
+
+            // Mostrar detalles de errores si los hay
+            if (data.errores && data.errores.length > 0) {
+                html += `
+                    <hr>
+                    <small><strong>Detalles de errores:</strong></small>
+                    <div class="mt-2" style="max-height: 200px; overflow-y: auto;">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Línea</th>
+                                    <th>Error</th>
+                                    <th>Datos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.errores.forEach(error => {
+                    html += `
+                        <tr>
+                            <td>${error.linea || 'N/A'}</td>
+                            <td><small>${error.error}</small></td>
+                            <td><small><code>${JSON.stringify(error.data)}</code></small></td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            resultado.innerHTML = html;
+            resultado.style.display = 'block';
+
+            // Recargar tabla de instructores
+            await cargarInstructores();
+
+            // Limpiar formulario si todo fue exitoso
+            if (!data.tiene_errores) {
+                setTimeout(() => {
+                    document.getElementById('formCargarJSON').reset();
+                    document.getElementById('nombreArchivo').textContent = 'Ninguno';
+                    resultado.style.display = 'none';
+                    
+                    // Cerrar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalCargarJSON'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                }, 3000);
+            }
+
+        } else {
+            // Error del servidor
+            resultado.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle"></i> <strong>Error:</strong> ${data.error || 'Error desconocido'}
+                </div>
+            `;
+            resultado.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        resultado.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> <strong>Error de conexión:</strong> ${error.message}
+            </div>
+        `;
+        resultado.style.display = 'block';
+    } finally {
+        // Rehabilitar botón
+        btnSubir.disabled = false;
+        btnSubir.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir instructores';
+    }
+}
+
+function verDetalles(id) {
+    alert('Ver detalles del instructor ID: ' + id);
+    // Aquí puedes implementar un modal con más información
+}
+</script>
+
+<style>
+.card-sena {
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+</style>
+{% endblock %}

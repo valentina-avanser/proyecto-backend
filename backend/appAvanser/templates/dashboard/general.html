@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+
+{% block title %}Formulario de Caracterización - SENA AVANSER{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pregunta-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--sena-azul);
+    }
+    
+    .pregunta-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .pregunta-obligatoria::after {
+        content: " *";
+        color: red;
+    }
+    
+    .progress {
+        height: 25px;
+        border-radius: 10px;
+    }
+    
+    .progress-bar {
+        background: linear-gradient(90deg, var(--sena-verde) 0%, var(--sena-azul) 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-sena bg-primary text-white">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-clipboard-data"></i> 
+                        Formulario de Caracterización
+                    </h2>
+                    <p class="mb-3">
+                        Año: {{ caracterizacion.anio }} | Trimestre: {{ caracterizacion.trimestre }}
+                    </p>
+                    
+                    <!-- Barra de Progreso -->
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between text-white mb-1">
+                            <span>Progreso de completado</span>
+                            <span class="fw-bold">{{ progreso }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 style="width: {{ progreso }}%"
+                                 aria-valuenow="{{ progreso }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <form method="post" action="{% url 'formulario_caracterizacion' caracterizacion.id %}" id="formCaracterizacion">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Preguntas -->
+                {% for item in preguntas_con_respuestas %}
+                <div class="card pregunta-card mb-3">
+                    <div class="card-body">
+                        <label for="pregunta_{{ item.pregunta.id }}" 
+                               class="form-label fw-bold {% if item.pregunta.obligatoria %}pregunta-obligatoria{% endif %}">
+                            {{ forloop.counter }}. {{ item.pregunta.pregunta }}
+                        </label>
+                        
+                        {% if item.pregunta.tipo_pregunta == 'texto' %}
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="pregunta_{{ item.pregunta.id }}"
+                                   name="pregunta_{{ item.pregunta.id }}"
+                                   value="{{ item.respuesta }}"
+                                   {% if item.pregunta.obligatoria %}required{% endif %}>
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'email' %}
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="pregunta_{{ item.pregunta.id }}"
+                                   name="pregunta_{{ item.pregunta.id }}"
+                                   value="{{ item.respuesta }}"
+                                   {% if item.pregunta.obligatoria %}required{% endif %}>
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'telefono' %}
+                            <input type="tel" 
+                                   class="form-control" 
+                                   id="pregunta_{{ item.pregunta.id }}"
+                                   name="pregunta_{{ item.pregunta.id }}"
+                                   value="{{ item.respuesta }}"
+                                   pattern="[0-9]{10}"
+                                   placeholder="Ej: 3001234567"
+                                   {% if item.pregunta.obligatoria %}required{% endif %}>
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'numero' %}
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="pregunta_{{ item.pregunta.id }}"
+                                   name="pregunta_{{ item.pregunta.id }}"
+                                   value="{{ item.respuesta }}"
+                                   {% if item.pregunta.obligatoria %}required{% endif %}>
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'fecha' %}
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="pregunta_{{ item.pregunta.id }}"
+                                   name="pregunta_{{ item.pregunta.id }}"
+                                   value="{{ item.respuesta }}"
+                                   {% if item.pregunta.obligatoria %}required{% endif %}>
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'si_no' %}
+                            <select class="form-select" 
+                                    id="pregunta_{{ item.pregunta.id }}"
+                                    name="pregunta_{{ item.pregunta.id }}"
+                                    {% if item.pregunta.obligatoria %}required{% endif %}>
+                                <option value="">Selecciona una opción</option>
+                                <option value="Si" {% if item.respuesta == 'Si' %}selected{% endif %}>Sí</option>
+                                <option value="No" {% if item.respuesta == 'No' %}selected{% endif %}>No</option>
+                            </select>
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'seleccion_simple' %}
+                            <select class="form-select" 
+                                    id="pregunta_{{ item.pregunta.id }}"
+                                    name="pregunta_{{ item.pregunta.id }}"
+                                    {% if item.pregunta.obligatoria %}required{% endif %}>
+                                <option value="">Selecciona una opción</option>
+                                {% for opcion in item.pregunta.opciones %}
+                                    <option value="{{ opcion }}" {% if item.respuesta == opcion %}selected{% endif %}>
+                                        {{ opcion }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'seleccion_multiple' %}
+                            {% for opcion in item.pregunta.opciones %}
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       value="{{ opcion }}"
+                                       id="pregunta_{{ item.pregunta.id }}_{{ forloop.counter }}"
+                                       name="pregunta_{{ item.pregunta.id }}">
+                                <label class="form-check-label" for="pregunta_{{ item.pregunta.id }}_{{ forloop.counter }}">
+                                    {{ opcion }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        
+                        {% elif item.pregunta.tipo_pregunta == 'escala' %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">1</span>
+                                <input type="range" 
+                                       class="form-range" 
+                                       min="1" 
+                                       max="5" 
+                                       id="pregunta_{{ item.pregunta.id }}"
+                                       name="pregunta_{{ item.pregunta.id }}"
+                                       value="{{ item.respuesta|default:'3' }}"
+                                       oninput="this.nextElementSibling.value = this.value">
+                                <output class="badge bg-primary ms-2">{{ item.respuesta|default:'3' }}</output>
+                                <span class="text-muted small ms-2">5</span>
+                            </div>
+                        
+                        {% else %}
+                            <textarea class="form-control" 
+                                      id="pregunta_{{ item.pregunta.id }}"
+                                      name="pregunta_{{ item.pregunta.id }}"
+                                      rows="3"
+                                      {% if item.pregunta.obligatoria %}required{% endif %}>{{ item.respuesta }}</textarea>
+                        {% endif %}
+                        
+                        {% if item.pregunta.obligatoria %}
+                        <div class="form-text text-danger">
+                            <i class="bi bi-exclamation-circle"></i> Campo obligatorio
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Términos y Condiciones -->
+                <div class="card card-sena border-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-file-text text-warning"></i> 
+                            Términos y Condiciones
+                        </h5>
+                        <div class="bg-light p-3 rounded mb-3" style="max-height: 200px; overflow-y: auto;">
+                            <p class="mb-2"><strong>Autorización de Tratamiento de Datos Personales</strong></p>
+                            <p class="small">
+                                Autorizo al SENA para recolectar, almacenar, usar, circular y suprimir mis datos 
+                                personales conforme a la Ley 1581 de 2012 y sus decretos reglamentarios, para:
+                            </p>
+                            <ul class="small">
+                                <li>Evaluar mi elegibilidad para beneficios de sostenimiento</li>
+                                <li>Gestionar convocatorias y postulaciones</li>
+                                <li>Enviar comunicaciones sobre programas de bienestar</li>
+                                <li>Realizar estudios estadísticos</li>
+                            </ul>
+                            <p class="small mb-0">
+                                Conozco mis derechos de acceso, rectificación, actualización y supresión de mis datos.
+                            </p>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="acepta_terminos" 
+                                   name="acepta_terminos"
+                                   required>
+                            <label class="form-check-label fw-bold" for="acepta_terminos">
+                                He leído y acepto los términos y condiciones *
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-sena btn-lg">
+                        <i class="bi bi-check-circle"></i> Enviar Caracterización
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                        <i class="bi bi-arrow-left"></i> Guardar y Continuar Después
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Lateral -->
+            <div class="col-lg-4">
+                <!-- Ayuda -->
+                <div class="card card-sena bg-light sticky-top" style="top: 20px;">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-info-circle text-primary"></i> 
+                            Ayuda
+                        </h5>
+                        <p class="small text-muted mb-3">
+                            <strong>Consejos:</strong>
+                        </p>
+                        <ul class="small text-muted">
+                            <li class="mb-2">Responde con sinceridad todas las preguntas</li>
+                            <li class="mb-2">Los campos marcados con * son obligatorios</li>
+                            <li class="mb-2">Puedes guardar y continuar después</li>
+                            <li class="mb-2">Revisa tu correo para recibir las credenciales</li>
+                        </ul>
+
+                        <hr>
+
+                        <h6 class="fw-bold mb-2">
+                            <i class="bi bi-clock text-success"></i> 
+                            Tiempo estimado
+                        </h6>
+                        <p class="small text-muted mb-3">
+                            10-15 minutos aproximadamente
+                        </p>
+
+                        <hr>
+
+                        <h6 class="fw-bold mb-2">
+                            <i class="bi bi-shield-check text-warning"></i> 
+                            Seguridad
+                        </h6>
+                        <p class="small text-muted mb-0">
+                            Tu información está protegida y será usada únicamente 
+                            para fines académicos y de bienestar del SENA.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-guardar respuestas en localStorage
+    const form = document.getElementById('formCaracterizacion');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    // Advertencia antes de salir
+    let formModificado = false;
+    inputs.forEach(input => {
+        input.addEventListener('change', () => {
+            formModificado = true;
+        });
+    });
+    
+    window.addEventListener('beforeunload', (e) => {
+        if (formModificado) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    
+    // Prevenir doble envío
+    form.addEventListener('submit', (e) => {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Cargar Instructores - SENA{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-upload"></i> Cargar Instructores desde JSON
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Instrucciones -->
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Instrucciones:</h6>
+                        <ol class="mb-0">
+                            <li>Selecciona un archivo JSON con el formato correcto</li>
+                            <li>El archivo debe contener: documento, username, first_name, last_name, email, especialidad, competencia</li>
+                            <li>Haz clic en "Subir instructores" para procesar el archivo</li>
+                        </ol>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form id="formCargarInstructores" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="archivo" class="form-label">Selecciona un archivo JSON:</label>
+                            <input 
+                                type="file" 
+                                class="form-control" 
+                                id="archivo" 
+                                name="archivo" 
+                                accept=".json"
+                                required
+                            >
+                            <small class="text-muted">
+                                Archivo seleccionado: <span id="nombreArchivo">Ninguno</span>
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="btnSubir">
+                            <i class="bi bi-cloud-upload"></i> Subir instructores
+                        </button>
+                        
+                        <a href="{% url 'panel_coordinador_instructores' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </form>
+
+                    <!-- Mensaje de resultado -->
+                    <div id="resultado" class="mt-4" style="display: none;"></div>
+
+                    <!-- Tabla de errores (si los hay) -->
+                    <div id="tablaErrores" class="mt-4" style="display: none;">
+                        <h5 class="text-danger">Errores encontrados:</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-danger">
+                                    <tr>
+                                        <th>Línea</th>
+                                        <th>Error</th>
+                                        <th>Datos</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyErrores"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formCargarInstructores');
+    const archivo = document.getElementById('archivo');
+    const nombreArchivo = document.getElementById('nombreArchivo');
+    const btnSubir = document.getElementById('btnSubir');
+    const resultado = document.getElementById('resultado');
+    const tablaErrores = document.getElementById('tablaErrores');
+    const tbodyErrores = document.getElementById('tbodyErrores');
+
+    // Mostrar nombre del archivo seleccionado
+    archivo.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            nombreArchivo.textContent = this.files[0].name;
+        } else {
+            nombreArchivo.textContent = 'Ninguno';
+        }
+    });
+
+    // Enviar formulario
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Validar que se haya seleccionado un archivo
+        if (!archivo.files.length) {
+            mostrarMensaje('error', 'Por favor selecciona un archivo JSON');
+            return;
+        }
+
+        // Deshabilitar botón y mostrar loading
+        btnSubir.disabled = true;
+        btnSubir.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+
+        // Limpiar resultados anteriores
+        resultado.style.display = 'none';
+        tablaErrores.style.display = 'none';
+        tbodyErrores.innerHTML = '';
+
+        try {
+            // Crear FormData con el archivo y el token CSRF
+            const formData = new FormData();
+            formData.append('archivo', archivo.files[0]);
+            
+            // Obtener el token CSRF del formulario
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // Enviar petición
+            const response = await fetch('/cargar_instructores/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,  // ✅ Token CSRF en header
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Mostrar resultado exitoso
+                let mensaje = `
+                    <div class="alert alert-success">
+                        <h5><i class="bi bi-check-circle"></i> ${data.mensaje}</h5>
+                        <ul class="mb-0">
+                            <li><strong>Nuevos registros:</strong> ${data.nuevos_registros}</li>
+                            <li><strong>Registros existentes actualizados:</strong> ${data.registros_existentes}</li>
+                            <li><strong>Total procesados:</strong> ${data.total_procesados}</li>
+                        </ul>
+                    </div>
+                `;
+
+                resultado.innerHTML = mensaje;
+                resultado.style.display = 'block';
+
+                // Mostrar errores si los hay
+                if (data.errores && data.errores.length > 0) {
+                    mostrarErrores(data.errores);
+                }
+
+                // Limpiar formulario
+                form.reset();
+                nombreArchivo.textContent = 'Ninguno';
+
+            } else {
+                // Error del servidor
+                mostrarMensaje('error', data.error || 'Error al procesar el archivo');
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarMensaje('error', 'Error de conexión con el servidor');
+        } finally {
+            // Rehabilitar botón
+            btnSubir.disabled = false;
+            btnSubir.innerHTML = '<i class="bi bi-cloud-upload"></i> Subir instructores';
+        }
+    });
+
+    function mostrarMensaje(tipo, mensaje) {
+        const clase = tipo === 'error' ? 'alert-danger' : 'alert-success';
+        const icono = tipo === 'error' ? 'x-circle' : 'check-circle';
+        
+        resultado.innerHTML = `
+            <div class="alert ${clase}">
+                <i class="bi bi-${icono}"></i> ${mensaje}
+            </div>
+        `;
+        resultado.style.display = 'block';
+    }
+
+    function mostrarErrores(errores) {
+        errores.forEach(error => {
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td>${error.linea || 'N/A'}</td>
+                <td>${error.error}</td>
+                <td><code>${JSON.stringify(error.data)}</code></td>
+            `;
+            tbodyErrores.appendChild(fila);
+        });
+        tablaErrores.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

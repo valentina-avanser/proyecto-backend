@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = "appAvanser.Usuario"
 
 # Application definition
 
@@ -38,10 +39,34 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'appAvanser',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
     'rest_framework',
 ]
+# settings.py
+
+# Asegúrate de tener esto configurado
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# Si estás usando sesiones
+CSRF_USE_SESSIONS = True
+CSRF_COOKIE_HTTPONLY = False  # Permite acceso desde JavaScript
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+   
+    ),
+}
+# Para desarrollo
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', 
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -51,12 +76,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
 ROOT_URLCONF = 'ProyectoAvanser.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'appAvanser' / 'templates',],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -67,6 +95,12 @@ TEMPLATES = [
         },
     },
 ]
+# Redirección después del login
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'landing_page'
+
+# URL de login (por si Django necesita redirigir a login)
+LOGIN_URL = '/login/'  # O 'admin:login' si usas el admin
 
 WSGI_APPLICATION = 'ProyectoAvanser.wsgi.application'
 
@@ -88,7 +122,15 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
+# ...existing code...
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'valentinaavanser@gmail.com'           # <-- tu correo real
+EMAIL_HOST_PASSWORD = 'eqla tbvp adhz kxvc'      # <-- tu contraseña o app password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# ...existing code...
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
