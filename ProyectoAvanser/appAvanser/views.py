@@ -4,8 +4,22 @@ from django.shortcuts import render
 from rest_framework import viewsets, status, permissions, generics, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import CitaComite, Ficha, AprendizFicha, Notificacion, Instructor, AsignacionFicha, ReporteTrimestral, Actividad
-from .serializers import CitaComiteSerializer, FichaSerializer, NotificacionSerializer,AsignacionFichaSerializer, ReporteTrimestralSerializer, ActividadSerializer
+from .models import Rol, Usuario, CitaComite, Ficha, AprendizFicha, Notificacion, Instructor, AsignacionFicha, ReporteTrimestral, Actividad
+from .serializers import RolSerializer, UsuarioSerializer, CitaComiteSerializer, FichaSerializer, NotificacionSerializer,AsignacionFichaSerializer, ReporteTrimestralSerializer, ActividadSerializer
+
+# - Views para el registro de roles
+class RolViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar los roles de usuario (Administrador, Instructor, Aprendiz, etc.)
+    """
+    queryset = Rol.objects.all()
+    serializer_class = RolSerializer
+
+
+# - View para el registro de usuarios
+class UsuarioViewSet(viewsets.ModelViewSet):
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
 
 
 

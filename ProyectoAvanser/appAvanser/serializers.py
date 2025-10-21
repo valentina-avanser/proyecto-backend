@@ -1,5 +1,47 @@
 from rest_framework import serializers
-from .models import CitaComite, Usuario,Ficha, AprendizFicha, Notificacion, AsignacionFicha, Ficha,ReporteTrimestral, Actividad
+from .models import CitaComite, Rol, Usuario,Ficha, AprendizFicha, Notificacion, AsignacionFicha, Ficha,ReporteTrimestral, Actividad
+
+# --- Roles ---
+class RolSerializer(serializers.ModelSerializer):
+   class Meta:
+       model = Rol
+       fields = "__all__"
+
+# --- REGISTRO DE USUARIOS PERSONALIZADO ---
+
+class UsuarioSerializer(serializers.ModelSerializer):
+    rol_nombre = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Usuario
+        fields = [
+            "id",
+            "nombre",
+            "apellido",
+            "tipo_documento",
+            "documento",
+            "correo",
+            "telefono",
+            "rol_nombre",
+            "estado",
+            "contrasenia",
+        ]
+        extra_kwargs = {
+            "contrasenia": {"write_only": True}
+        }
+
+    def create(self, validated_data):
+        rol_nombre = validated_data.pop("rol_nombre")
+        try:
+            rol = Rol.objects.get(nombre_rol__iexact=rol_nombre)
+        except Rol.DoesNotExist:
+            raise serializers.ValidationError({"rol_nombre": "El rol indicado no existe"})
+
+        usuario = Usuario.objects.create(rol=rol, **validated_data)
+        # Nota: en tu modelo, `contrasenia` es texto plano, pero podrías usar hashing si lo deseas
+        return usuario
+
+
 
 #HU008 - Serializador para CitaComite (Administrador, Funcionario de Bienestar)
 class CitaComiteSerializer(serializers.ModelSerializer):

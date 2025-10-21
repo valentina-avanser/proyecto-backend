@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'appAvanser',
     'rest_framework',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -75,15 +77,15 @@ WSGI_APPLICATION = 'ProyectoAvanser.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     },
-    'sqlite': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bd_avanser_3',
+        'NAME': 'avanser',
         'USER': 'postgres',
-        'PASSWORD': 'SENA',
+        'PASSWORD': 'Anne04',
         'HOST': 'localhost',
         'PORT': '5432',
     }

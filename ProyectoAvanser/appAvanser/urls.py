@@ -1,8 +1,26 @@
 from rest_framework.routers import DefaultRouter
-from .views import CitaComiteViewSet, AsignacionFichaViewSet, ReporteTrimestralViewSet, ActividadViewSet,FichaBusquedaView,NotificacionViewSet
+from .views import RolViewSet, UsuarioViewSet, CitaComiteViewSet, AsignacionFichaViewSet, ReporteTrimestralViewSet, ActividadViewSet,FichaBusquedaView,NotificacionViewSet
 from django.urls import path, include
 
+
 router = DefaultRouter()
+
+urlpatterns = router.urls + [
+    path("fichas/buscar/", FichaBusquedaView.as_view(), name="buscar-fichas"),
+    
+    
+]
+#roles 
+router.register(r'roles', RolViewSet, basename='roles')  #
+urlpatterns = [
+    path('', include(router.urls)),
+]
+
+# Registro de usuarios
+router.register(r'usuarios', UsuarioViewSet, basename='usuarios')
+urlpatterns = router.urls
+
+
 #HU008 - Rutas para CitaComite (Administrador, Funcionario de Bienestar)
 router.register(r"comites", CitaComiteViewSet, basename="comite")
 #HU010 - Rutas para busqueda fichas y notificaciones (Instructor, Aprendiz)
