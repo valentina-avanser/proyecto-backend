@@ -1,90 +1,9 @@
 from django.db import models
 from datetime import date
 
-# ------------------------
-# ROLES Y USUARIOS
-# ------------------------
-class Rol(models.Model):
-    nombre_rol = models.CharField(max_length=50, unique=True)
-
-    def __str__(self):
-        return self.nombre_rol
 
 
-class Usuario(models.Model):
-    TIPO_DOCUMENTO = [
-        ('CC', 'Cédula de ciudadanía'),
-        ('TI', 'Tarjeta de identidad'),
-        ('CE', 'Cédula de extranjería'),
-        ('PP', 'Pasaporte'),
-        ('RC', 'Registro civil'),
-    ]
 
-    nombre = models.CharField(max_length=50)
-    apellido = models.CharField(max_length=50)
-    tipo_documento = models.CharField(max_length=2, choices=TIPO_DOCUMENTO)
-    documento = models.CharField(max_length=20, unique=True)
-    correo = models.EmailField(unique=True, max_length=100)
-    telefono = models.CharField(max_length=15, blank=True, null=True)
-    rol = models.ForeignKey(Rol, on_delete=models.CASCADE)
-    estado = models.BooleanField(default=True)
-    contrasenia = models.CharField(max_length=128)
-
-    def __str__(self):
-        return f"{self.nombre} {self.apellido} ({self.rol})"
-
-
-# ------------------------
-# PERFILES
-# ------------------------
-class Administrador(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.PROTECT)
-
-
-class Aprendiz(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.PROTECT)
-
-
-class FuncionarioBienestar(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.PROTECT)
-    componente = models.CharField(max_length=100)
-
-
-class Instructor(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.PROTECT)
-    especialidad = models.CharField(max_length=100)
-
-
-# ------------------------
-# ACADÉMICO
-# ------------------------
-class ProgramaFormacion(models.Model):
-    nombre = models.CharField(max_length=100)
-    nivel = models.CharField(max_length=50)
-    duracion_meses = models.PositiveSmallIntegerField()
-    modalidad = models.CharField(max_length=50)
-
-    def __str__(self):
-        return self.nombre
-
-
-class Ficha(models.Model):
-    numero_ficha = models.CharField(max_length=20, unique=True)
-    programa = models.ForeignKey(ProgramaFormacion, on_delete=models.PROTECT)
-    jornada = models.CharField(max_length=50)
-    fecha_inicio = models.DateField()
-    fecha_fin = models.DateField()
-
-    def __str__(self):
-        return self.numero_ficha
-
-
-class AprendizFicha(models.Model):
-    aprendiz = models.ForeignKey(Aprendiz, on_delete=models.PROTECT)
-    ficha = models.ForeignKey(Ficha, on_delete=models.PROTECT)
-    estado = models.CharField(max_length=20)
-    fecha_ingreso = models.DateField()
-    fecha_egreso = models.DateField(blank=True, null=True)
 
 
 class SesionClase(models.Model):
@@ -261,28 +180,7 @@ class AsignacionFicha(models.Model):
 
     def __str__(self):
         return f"{self.instructor.nombre} - {self.ficha.numero_ficha} ({self.estado})"
-    
-#HU010 Notificaciones
-class Notificacion(models.Model):
-    TIPOS = [
-        ("alerta", "Alerta"),
-        ("recordatorio", "Recordatorio"),
-        ("mensaje", "Mensaje"),
-        ("info", "Información"),
-    ]
 
-    usuario = models.ForeignKey("Usuario", on_delete=models.CASCADE, related_name="notificaciones")
-    tipo = models.CharField(max_length=20, choices=TIPOS, default="mensaje")
-    titulo = models.CharField(max_length=100)
-    contenido = models.TextField()
-    leida = models.BooleanField(default=False)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.titulo} → {self.usuario.nombre}"
-
-    class Meta:
-        ordering = ["-fecha_creacion"]
         
 
 #HU012 Reporte Trimestral
